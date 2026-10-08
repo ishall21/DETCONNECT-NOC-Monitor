@@ -1,0 +1,13 @@
+services:
+  detconnect-noc:
+    build: .
+    container_name: detconnect-noc-monitor
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config:/app/config:ro
+      - ./data:/app/data
+    # Host networking may be required in some environments for ICMP visibility.
