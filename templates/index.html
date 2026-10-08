@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="60">
+  <title>DETCONNECT NOC Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div>
+    <div class="eyebrow">DIGITAL ESSENTIALS TRADING</div>
+    <h1>DETCONNECT <span>NOC MONITOR</span></h1>
+    <p>Network Operations • Availability • Incident Timeline</p>
+  </div>
+  <div class="live"><i></i> MONITORING SERVICE</div>
+</header>
+<main>
+  <section class="intro">
+    <div><h2>Network Overview</h2><p>Live reachability from the monitoring host. Device-specific metrics are roadmap items unless an adapter is configured.</p></div>
+    <div class="updated">Updated <span id="updated">—</span></div>
+  </section>
+  <section class="stats">
+    <article class="stat"><label>MONITORED DEVICES</label><strong id="total">0</strong><small>Enabled in inventory</small></article>
+    <article class="stat"><label>ONLINE</label><strong class="green" id="up">0</strong><small>ICMP response received</small></article>
+    <article class="stat"><label>OFFLINE</label><strong class="red" id="down">0</strong><small>No ICMP response</small></article>
+    <article class="stat"><label>AWAITING CHECK</label><strong id="pending">0</strong><small>First poll not complete</small></article>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h3>Device Inventory</h3><p>Routers · Switches · OLTs · Core services</p></div><span class="pill">ICMP POLLING</span></div>
+    <div class="table-wrap"><table><thead><tr><th>DEVICE</th><th>ROLE</th><th>SITE</th><th>MANAGEMENT IP</th><th>STATUS</th><th>LATENCY</th><th>LAST CHECK</th></tr></thead><tbody id="devices"><tr><td colspan="7">Loading inventory…</td></tr></tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><div><h3>Incident Timeline</h3><p>Availability state changes</p></div><span class="pill muted">LATEST 50 EVENTS</span></div>
+    <div id="events" class="events"><p class="empty">Loading events…</p></div>
+  </section>
+  <footer>DETCONNECT NOC Monitor • Protect this dashboard behind a trusted management network or VPN.</footer>
+</main>
+<script>
+const esc = s => String(s ?? "—").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+async function refresh() {
+  try {
+    const response = await fetch('/api/status', {cache:'no-store'});
+    const data = await response.json();
+    const devices = data.devices || [], counts = data.counts || {};
+    document.getElementById('total').textContent = devices.length;
+    document.getElementById('up').textContent = counts.UP || 0;
+    document.getElementById('down').textContent = counts.DOWN || 0;
+    document.getElementById('pending').textContent = (counts.PENDING || 0) + (counts.UNKNOWN || 0);
+    document.getElementById('updated').textContent = new Date(data.updated_at).toLocaleTimeString();
+    document.getElementById('devices').innerHTML = devices.length ? devices.map(d => `
+      <tr><td class="device">${esc(d.name)}</td><td>${esc(d.role)}</td><td>${esc(d.site)}</td><td class="mono">${esc(d.host)}</td>
+      <td><span class="status ${String(d.state).toLowerCase()}">${esc(d.state)}</span></td>
+      <td>${d.latency_ms == null ? '—' : esc(d.latency_ms + ' ms')}</td><td>${d.checked_at ? esc(new Date(d.checked_at).toLocaleTimeString()) : 'Waiting…'}</td></tr>`).join('') : '<tr><td colspan="7">No enabled devices. Edit config/devices.yaml and set enabled: true.</td></tr>';
+    const ev = await (await fetch('/api/events', {cache:'no-store'})).json();
+    document.getElementById('events').innerHTML = ev.length ? ev.map(e => `
+      <div class="event"><span class="event-dot ${String(e.state).toLowerCase()}"></span><div class="event-main"><strong>${esc(e.device)}</strong><p>${esc(e.message)}</p></div><time>${esc(new Date(e.created_at).toLocaleString())}</time></div>`).join('') : '<p class="empty">No state changes recorded yet.</p>';
+  } catch(e) {
+    document.getElementById('updated').textContent = 'API unavailable';
+  }
+}
+refresh(); setInterval(refresh, 15000);
+</script>
+</body>
+</html>
