@@ -1,0 +1,28 @@
+poll_interval_seconds: 30
+timeout_seconds: 2
+devices:
+  # Replace these documentation addresses with your real management IPs.
+  - name: DETCONNECT-CCR2216-EDGE
+    host: 192.0.2.1
+    role: MikroTik BGP Edge
+    site: Main POP
+    enabled: false
+    snmp:
+      enabled: false
+      community_env: SNMP_COMMUNITY
+  - name: DETCONNECT-CCR2116-CORE
+    host: 192.0.2.2
+    role: MikroTik Core Router
+    site: Main POP
+    enabled: false
+    snmp:
+      enabled: false
+      community_env: SNMP_COMMUNITY
+  - name: DETCONNECT-BDCOM-OLT
+    host: 192.0.2.10
+    role: GPON OLT
+    site: Access Network
+    enabled: false
+    snmp:
+      enabled: false
+      community_env: SNMP_COMMUNITY
